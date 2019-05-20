@@ -16,22 +16,14 @@ class _PostListState extends State<PostList> {
 
   Widget _buildList() {
     return ListView.builder(itemBuilder: (BuildContext context, int i) {
-      if (i <= this.postList.length) {
+      if (i < this.postList.length) {
         if (i.isOdd) {
           return Divider();
         }
-
-        // If we reach the end of the list
-        final int index = i ~/ 2;
-        if (index >= this.postList.length) {
-          // TODO ajouter posts
-          this._fetch();
-          print('fin');
-        }
-
-        return this._buildListRow(this.postList[index]);
+        
+        return this._buildListRow(this.postList[i]);
       } else {
-        this._fetch();
+        this._fetchPosts();
       }
     });
   }
@@ -40,104 +32,103 @@ class _PostListState extends State<PostList> {
     return data.title;
   }
 
-  void _fetch() async {
-    final posts = await WordPress.getLastPosts();
-    setState(() {
-      if (postList.length > 0) {
-        postList = [...postList, ...posts];
-      } else {
-        postList = posts;
-      }
-    });
+  int _fetchCounter = 0;
+  void _fetchPosts() async {
+    if (!this.query.isLoading()) {
+      _fetchCounter++;
+      print("--- FetchCount : $_fetchCounter ---");
+      final posts = await this.query.getNextPage();
+      setState(() {
+        if (postList.length > 0) {
+          postList = [...postList, ...posts];
+        } else {
+          postList = posts;
+        }
+      });
+    }
   }
 
-  List<Widget> list = [];
   WPQuery query = new WPQuery(queryArgs: new WPQueryArgs(perPage: 2));
 
-  loadPost() {
-    setState(() {
-      this.list.add(FutureBuilder(
-        future: query.getNextPage(),
-        builder: (BuildContext context, snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.none:
-              return new Text('Ajouter un post pour continuer');
-              break;
-            case ConnectionState.waiting:
-              return new Text('Chargement...');
-              break;
-            default:
-              if (snapshot.hasError)
-                return new Text('Error : ${snapshot.error}');
-              else
-                if (snapshot.data.length > 1) {
-                  List<Widget> output = [];
-                  for (int i = 0; i < snapshot.data.length; i ++){
-                    output.add(snapshot.data[i].title);
-                  }
-                  return Column(
-                      children: output
-                  );
-                } else {
-                  return snapshot.data[0].title;
-                }
-          }
-        },
-      ));
-    });
-  }
+//  loadPost() {
+//    setState(() {
+//      this.list.add(FutureBuilder(
+//        future: query.getNextPage(),
+//        builder: (BuildContext context, snapshot) {
+//          switch (snapshot.connectionState) {
+//            case ConnectionState.none:
+//              return new Text('Ajouter un post pour continuer');
+//              break;
+//            case ConnectionState.waiting:
+//              return new Text('Chargement...');
+//              break;
+//            default:
+//              if (snapshot.hasError)
+//                return new Text('Error : ${snapshot.error}');
+//              else
+//                if (snapshot.data.length > 1) {
+//                  List<Widget> output = [];
+//                  for (int i = 0; i < snapshot.data.length; i ++){
+//                    output.add(snapshot.data[i].title);
+//                  }
+//                  return Column(
+//                      children: output
+//                  );
+//                } else {
+//                  return snapshot.data[0].title;
+//                }
+//          }
+//        },
+//      ));
+//    });
+//  }
 
-  void resetQuery(){
-    this.setState(() {
-      this.list = [];
-      this.query.reset();
-    });
-  }
+//  void resetQuery(){
+//    this.setState(() {
+//      this.list = [];
+//      this.query.reset();
+//    });
+//  }
 
   @override
   Widget build(BuildContext context) {
-//    if (postList.length > 0) {
-//      return this._buildList();
-//    } else {
-//      this._fetch();
-//      return Text('test');
-//    }
+      return this._buildList();
 
-    return Container(
-      child: Column(
-        children: <Widget>[
-          ConstrainedBox(
-            constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height - 150),
-//            child: ListView(
+//    return Container(
+//      child: Column(
+//        children: <Widget>[
+//          ConstrainedBox(
+//            constraints: BoxConstraints(
+//                maxHeight: MediaQuery.of(context).size.height - 150),
+////            child: ListView(
+////              children: list,
+////            ),
+//            child : Column(
 //              children: list,
-//            ),
-            child : Column(
-              children: list,
-            )
-          ),
-          Row(
-            children: <Widget>[
-              OutlineButton(
-                onPressed: () {
-                  this.loadPost();
-                },
-                color: Colors.blue,
-                textColor: Colors.blue,
-                splashColor: Colors.blue,
-                highlightColor: Colors.blue,
-                child: Text('Ajouter un post'),
-              ),
-              OutlineButton(
-                onPressed: () {
-                  this.resetQuery();
-                },
-                child: Text('Reset Query'),
-              )
-            ],
-          )
-        ],
-      ),
-    );
+//            )
+//          ),
+//          Row(
+//            children: <Widget>[
+//              OutlineButton(
+//                onPressed: () {
+//                  this.loadPost();
+//                },
+//                color: Colors.blue,
+//                textColor: Colors.blue,
+//                splashColor: Colors.blue,
+//                highlightColor: Colors.blue,
+//                child: Text('Ajouter un post'),
+//              ),
+//              OutlineButton(
+//                onPressed: () {
+//                  this.resetQuery();
+//                },
+//                child: Text('Reset Query'),
+//              )
+//            ],
+//          )
+//        ],
+//      ),
+//    );
   }
 }

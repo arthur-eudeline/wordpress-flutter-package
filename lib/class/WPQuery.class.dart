@@ -80,6 +80,8 @@ class WPQuery {
     this._currentPage = pageNum;
     String url = _restUrl + "${this.postType}/${this.buildQuery()}${this._currentPage}";
 
+    this._loading = true;
+
     // HTTP call
     final response = await this._http.get(url);
 
@@ -93,11 +95,13 @@ class WPQuery {
         output.add(WPPost.fromJson(results[i]));
       }
 
+      this._loading = false;
       return output;
     }
 
     /// Else there is en error
     else {
+      this._loading = false;
       // TODO handle errors
       throw Exception('error');
     }
