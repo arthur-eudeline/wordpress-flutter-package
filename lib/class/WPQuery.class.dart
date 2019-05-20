@@ -156,7 +156,10 @@ class WPQuery {
 
   /// Reset the query
   void reset(){
-    // TODO code the reset fonction
+    this._currentPage = queryArgs.page;
+    this._errors = [];
+    this._loading = false;
+    this._havePost = true;
   }
 
   WPQuery({
