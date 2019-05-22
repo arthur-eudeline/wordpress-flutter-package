@@ -16,15 +16,52 @@ class _PostListState extends State<PostList> {
 
   Widget _buildList() {
     return ListView.builder(itemBuilder: (BuildContext context, int i) {
-      if (i < this.postList.length) {
-        if (i.isOdd) {
-          return Divider();
-        }
-        
-        return this._buildListRow(this.postList[i]);
-      } else {
-        this._fetchPosts();
-      }
+        return FutureBuilder(
+            future: this.query.getNextPage(),
+            builder: (BuildContext context, snapshot) {
+              switch (snapshot.connectionState) {
+                case ConnectionState.none:
+                  return new Text('Ajouter un post pour continuer');
+                  break;
+                case ConnectionState.waiting:
+                  return Center(child: CircularProgressIndicator());
+                  break;
+                default:
+                  if (snapshot.hasError)
+                    return new Text('Error : ${snapshot.error}');
+                  else if (snapshot.data.length > 1) {
+                    List<Widget> output = [];
+                    for (int i = 0; i < snapshot.data.length; i ++) {
+                      output.add(Divider());
+                      output.add(Padding(
+                          padding: EdgeInsets.all(10.0),
+                          child: snapshot.data[i].title
+                      ));
+                    }
+                    return Column(
+                        children: output
+                    );
+                  } else {
+                    Divider();
+                    return Padding(
+                        padding: EdgeInsets.all(10.0),
+                        child: snapshot.data[0].title
+                    );
+                  }
+              }
+            }
+        );
+
+
+//      if (i < this.postList.length) {
+//        if (i.isOdd) {
+//          return Divider();
+//        }
+//
+//        return this._buildListRow(this.postList[i]);
+//      } else {
+//        this._fetchPosts();
+//      }
     });
   }
 
