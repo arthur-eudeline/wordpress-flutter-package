@@ -3,6 +3,8 @@ import 'package:wordpress_flutter/class/WPQueryArgs.class.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+// TODO gérer les exceptions
+// TODO gérer les errors HTTP 
 class WPQuery {
 
   /// The number of posts that have been displayed until now
@@ -164,6 +166,10 @@ class WPQuery {
     this._errors = [];
     this._loading = false;
     this._havePost = true;
+  }
+
+  int getPerPage() {
+    return this.queryArgs.perPage;
   }
 
   WPQuery({
