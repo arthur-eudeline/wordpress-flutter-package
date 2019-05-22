@@ -11,161 +11,100 @@ class PostList extends StatefulWidget {
 }
 
 class _PostListState extends State<PostList> {
-  /// Contains all the posts loaded by the PostList
-  List<WPPost> postList = [];
 
-  Widget _buildList() {
-    return ListView.builder(itemBuilder: (BuildContext context, int i) {
-        return FutureBuilder(
-            future: this.query.getNextPage(),
-            builder: (BuildContext context, snapshot) {
-              switch (snapshot.connectionState) {
-                case ConnectionState.none:
-                  return new Text('Ajouter un post pour continuer');
-                  break;
-                case ConnectionState.waiting:
-                  return Center(child: CircularProgressIndicator());
-                  break;
-                default:
-                  if (snapshot.hasError)
-                    return new Text('Error : ${snapshot.error}');
-                  else if (snapshot.data.length > 1) {
-                    List<Widget> output = [];
-                    for (int i = 0; i < snapshot.data.length; i ++) {
-                      output.add(Divider());
-                      output.add(Padding(
-                          padding: EdgeInsets.all(10.0),
-                          child: snapshot.data[i].title
-                      ));
-                    }
-                    return Column(
-                        children: output
-                    );
-                  } else {
-                    Divider();
-                    return Padding(
-                        padding: EdgeInsets.all(10.0),
-                        child: snapshot.data[0].title
-                    );
-                  }
-              }
-            }
-        );
+  List<String> _items = new List<String>();
 
+  int _perPage = 10;
 
-//      if (i < this.postList.length) {
-//        if (i.isOdd) {
-//          return Divider();
-//        }
-//
-//        return this._buildListRow(this.postList[i]);
-//      } else {
-//        this._fetchPosts();
-//      }
+  int _present = 0;
+
+  Widget loadMoreTemplate = Center(
+    child : Padding(
+      padding: EdgeInsets.all(15.0),
+      child: CircularProgressIndicator()
+    )
+  );
+
+  WPQuery _query = new WPQuery(queryArgs: new WPQueryArgs(perPage: 2));
+
+  bool _loading = false;
+
+  // TODO remove
+  int _loadCount = 0;
+
+  void _loadMore() async {
+    setState(() {
+      this._loading = true;
+    });
+
+    _loadCount++;
+    print("--- Load $_loadCount ---");
+
+    await Future.delayed(Duration(seconds: 3));
+
+    setState(() {
+      if((_present + _perPage ) > __originalItems.length) {
+        _items.addAll(
+            __originalItems.getRange(_present, __originalItems.length));
+      } else {
+        _items.addAll(
+            __originalItems.getRange(_present, _present + _perPage));
+      }
+      _present = _present + _perPage;
+      _loading = false;
     });
   }
 
-  Widget _buildListRow(data) {
-    return data.title;
-  }
-
-  int _fetchCounter = 0;
-  void _fetchPosts() async {
-    if (!this.query.isLoading()) {
-      _fetchCounter++;
-      print("--- FetchCount : $_fetchCounter ---");
-      final posts = await this.query.getNextPage();
-      setState(() {
-        if (postList.length > 0) {
-          postList = [...postList, ...posts];
-        } else {
-          postList = posts;
+  Widget _buildList() {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification scrollInfo) {
+        if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+          print("loadingStart");
+          if (!this._loading) {
+            this._loadMore();
+          }
         }
-      });
-    }
+      },
+      child: ListView.builder(
+        // If the current item displayed number is inferior to the number of original items, then we keep one space for the loadMore button, otherwise, just the same length
+          itemCount: (this._present <= this._items.length) ? this._items.length + 1 : this._items.length,
+          itemBuilder: (context, index) {
+            // Display the button if we reached the end of the items list
+            if (index == this._items.length ) {
+              return this._buildLoadMoreRow();
+            }
+
+            // Display an item
+            else {
+              return this._buildRow(index);
+            }
+          }
+      ),
+    );
   }
 
-  WPQuery query = new WPQuery(queryArgs: new WPQueryArgs(perPage: 2));
+  Widget _buildRow(int index) {
+    return ListTile(
+      title : Text(_items[index])
+    );
+  }
 
-//  loadPost() {
-//    setState(() {
-//      this.list.add(FutureBuilder(
-//        future: query.getNextPage(),
-//        builder: (BuildContext context, snapshot) {
-//          switch (snapshot.connectionState) {
-//            case ConnectionState.none:
-//              return new Text('Ajouter un post pour continuer');
-//              break;
-//            case ConnectionState.waiting:
-//              return new Text('Chargement...');
-//              break;
-//            default:
-//              if (snapshot.hasError)
-//                return new Text('Error : ${snapshot.error}');
-//              else
-//                if (snapshot.data.length > 1) {
-//                  List<Widget> output = [];
-//                  for (int i = 0; i < snapshot.data.length; i ++){
-//                    output.add(snapshot.data[i].title);
-//                  }
-//                  return Column(
-//                      children: output
-//                  );
-//                } else {
-//                  return snapshot.data[0].title;
-//                }
-//          }
-//        },
-//      ));
-//    });
-//  }
+  Widget _buildLoadMoreRow() {
+    return this.loadMoreTemplate;
+  }
 
-//  void resetQuery(){
-//    this.setState(() {
-//      this.list = [];
-//      this.query.reset();
-//    });
-//  }
+  final List<String> __originalItems = List<String>.generate(10000, (i) => "Item $i");
+  @override
+  void initState() {
+    super.initState();
+    setState(() {
+      _items.addAll(__originalItems.getRange(_present, _present + _perPage));
+      _present = _present + _perPage;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
       return this._buildList();
-
-//    return Container(
-//      child: Column(
-//        children: <Widget>[
-//          ConstrainedBox(
-//            constraints: BoxConstraints(
-//                maxHeight: MediaQuery.of(context).size.height - 150),
-////            child: ListView(
-////              children: list,
-////            ),
-//            child : Column(
-//              children: list,
-//            )
-//          ),
-//          Row(
-//            children: <Widget>[
-//              OutlineButton(
-//                onPressed: () {
-//                  this.loadPost();
-//                },
-//                color: Colors.blue,
-//                textColor: Colors.blue,
-//                splashColor: Colors.blue,
-//                highlightColor: Colors.blue,
-//                child: Text('Ajouter un post'),
-//              ),
-//              OutlineButton(
-//                onPressed: () {
-//                  this.resetQuery();
-//                },
-//                child: Text('Reset Query'),
-//              )
-//            ],
-//          )
-//        ],
-//      ),
-//    );
   }
 }
