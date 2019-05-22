@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:wordpress_flutter/class/WPPost.class.dart';
 import 'package:wordpress_flutter/class/WPQuery.class.dart';
 import 'package:wordpress_flutter/class/WPQueryArgs.class.dart';
@@ -12,7 +13,7 @@ class PostList extends StatefulWidget {
 
 class _PostListState extends State<PostList> {
 
-  List<String> _items = new List<String>();
+  List<WPPost> _items = new List<WPPost>();
 
   int _perPage = 10;
 
@@ -25,7 +26,7 @@ class _PostListState extends State<PostList> {
     )
   );
 
-  WPQuery _query = new WPQuery(queryArgs: new WPQueryArgs(perPage: 2));
+  WPQuery _query = new WPQuery(queryArgs: new WPQueryArgs(perPage: 10));
 
   bool _loading = false;
 
@@ -40,18 +41,12 @@ class _PostListState extends State<PostList> {
     _loadCount++;
     print("--- Load $_loadCount ---");
 
-    await Future.delayed(Duration(seconds: 3));
+    List<WPPost> fetchedPosts = await this._query.getNextPage();
 
     setState(() {
-      if((_present + _perPage ) > __originalItems.length) {
-        _items.addAll(
-            __originalItems.getRange(_present, __originalItems.length));
-      } else {
-        _items.addAll(
-            __originalItems.getRange(_present, _present + _perPage));
-      }
-      _present = _present + _perPage;
-      _loading = false;
+      this._items.addAll(fetchedPosts);
+      this._present = this._present + this._perPage;
+      this._loading = false;
     });
   }
 
@@ -84,8 +79,9 @@ class _PostListState extends State<PostList> {
   }
 
   Widget _buildRow(int index) {
-    return ListTile(
-      title : Text(_items[index])
+    return  Container(
+      padding: EdgeInsets.all(15.0),
+      child: _items[index].title
     );
   }
 
@@ -97,10 +93,7 @@ class _PostListState extends State<PostList> {
   @override
   void initState() {
     super.initState();
-    setState(() {
-      _items.addAll(__originalItems.getRange(_present, _present + _perPage));
-      _present = _present + _perPage;
-    });
+    this._loadMore();
   }
 
   @override
